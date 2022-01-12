@@ -17,6 +17,20 @@ class _Hats:
         """, [hat_id])
         return Hat(*c.fetchone())
 
+    def min(self,_topping):
+        c = self._conn.cursor()
+        c.execute("""SELECT supplier FROM hats WHERE topping = ? 
+                """,[_topping,])
+        return c.fetchone();
+
+    def deleteZero(self):
+        self._conn.execute(""" DELETE FROM hats WHERE  quantity = 0""")
+
+    def update(self, minSupplier ,topping):
+        c = self._conn.cursor()
+        c.execute(""" UPDATE hats  SET quantity = quantity - 1 WHERE  supplier = ?
+        AND topping = ?
+   """ , [minSupplier ,topping])
 
 class _Suppliers:
     def __init__(self, conn):

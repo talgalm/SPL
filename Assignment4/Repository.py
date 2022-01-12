@@ -1,7 +1,6 @@
 import sqlite3
-
+import atexit
 from DAO import _Hats, _Suppliers, _Orders
-
 
 class _Repository:
     def __init__(self):
@@ -29,6 +28,10 @@ class _Repository:
         CREATE TABLE orders (
             id       INTEGER  PRIMARY KEY,
             location TEXT     NOT NULL,
-            supplier INTEGER  REFERENCES hats(id)
+            hat INTEGER  REFERENCES hats(id)
         );
         """)
+
+
+repo = _Repository()
+atexit.register(repo._close)
