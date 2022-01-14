@@ -10,27 +10,36 @@ class _Hats:
                INSERT INTO hats (id, topping, supplier, quantity) VALUES (?, ? , ? , ?)
            """, [hat.id, hat.topping, hat.supplier, hat.quantity])
 
-    def find(self, hat_id):
+    def find(self, topping):
         c = self._conn.cursor()
         c.execute("""
-            SELECT * FROM hats WHERE id = ?
-        """, [hat_id])
+        select * from hats where topping = ? and supplier = (
+        select min(supplier)
+            from(
+            select supplier
+            from hats
+            where topping = ?)
+        )
+        """, [topping,topping, ])
         return Hat(*c.fetchone())
 
-    def min(self,_topping):
-        c = self._conn.cursor()
-        c.execute("""SELECT supplier FROM hats WHERE topping = ? 
-                """,[_topping,])
-        return c.fetchone();
+    #def find(self, topping):
+        #c = self._conn.cursor()
+        #c.execute("""
+        #    SELECT * FROM hats WHERE topping = ?
+        #""", [topping, ])
+        #return Hat(*c.fetchone())
 
-    def deleteZero(self):
-        self._conn.execute(""" DELETE FROM hats WHERE  quantity = 0""")
+    def delete(self, hat_id):
+        self._conn.execute("""
+               DELETE FROM hats where id = (?)
+           """, [hat_id, ])
 
-    def update(self, minSupplier ,topping):
-        c = self._conn.cursor()
-        c.execute(""" UPDATE hats  SET quantity = quantity - 1 WHERE  supplier = ?
-        AND topping = ?
-   """ , [minSupplier ,topping])
+    def update(self, hat_id, hat_quantity):
+        self._conn.execute("""
+               UPDATE hats SET quantity = (?) WHERE id = (?)
+           """, [hat_quantity - 1, hat_id])
+
 
 class _Suppliers:
     def __init__(self, conn):
@@ -39,7 +48,7 @@ class _Suppliers:
     def insert(self, supplier):
         self._conn.execute("""
                INSERT INTO suppliers (id, name) VALUES (?, ?)
-           """, [supplier.id, supplier.name])
+           """, [int(supplier.id), supplier.name])
 
     def find(self, supplier_id):
         c = self._conn.cursor()
@@ -53,10 +62,8 @@ class _Orders:
     def __init__(self, conn):
         self._conn = conn
 
-    def insert(self, order):
-        self._conn.execute("""
-               INSERT INTO orders (id, location, hat) VALUES (?, ? , ?)
-           """, [order.id, order.location, order.hat])
+    def insert(self,order):
+        self._conn.execute("""INSERT INTO orders (id,location,hat) VALUES (?,?,?)""",[order.id,order.location,order.hat])   
 
     def find(self, order_id):
         c = self._conn.cursor()

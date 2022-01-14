@@ -1,47 +1,47 @@
 import sys
+
 from DTO import Hat, Supplier, Order
-from Repository import repo
-
-
-# Configuration fil
+from Repository import _Repository, repo
 
 
 def main(args):
+    repo.init()
     repo.create_tables()
-    parse_config("config.txt")
-    parse_orders("orders.txt")
-    #write output
-
-
-def parse_config(config):
-    with open(config) as inputfile:
+    repo._commit()
+    #configFile = ("config.txt")
+    configFile = args[1]
+    with open(configFile) as inputfile:
         inputfile.readline()
         for line in inputfile:
-            if len(line.split(',')) == 4:
-                repo.hats.insert(
-                    Hat(line.split(',')[0], line.split(',')[1], line.split(',')[2], line.split(',')[3]))
+            line = line.split("\n")[0]
+            if len(line.split(",")) == 4:
+                repo.hats.insert(Hat(line.split(',')[0], line.split(',')[1], line.split(',')[2], line.split(',')[3]))
+                repo._commit()
             else:
-                    repo.supplier.insert(Supplier(line.split(',')[0], line.split(',')[1]))
+                repo.supplier.insert(Supplier(line.split(',')[0], line.split(',')[1]))
+                repo._commit()
+    #configFile = ("orders.txt")
+    configFile = args[2]
+    index = 1
+    output = open(args[3], "w")
+    with open(configFile) as inputfile2:
+        for line in inputfile2:
+            line = line.split("\n")[0]
+            loc, top = line.split(',')[0], line.split(',')[1]
+            hat = repo.hats.find(top)
+            sup = repo.supplier.find(hat.supplier)
+            repo.orders.insert(Order(index, loc, hat.id))
+            repo._commit()
+            index += 1
+            output.write(top + "," + sup.name + "," + loc + "\n")
+            if hat.quantity > 0:
+                repo.hats.update(hat.id, hat.quantity)
+                repo._commit()
+            if hat.quantity-1 == 0:
+                repo.hats.delete(hat.id)
+                repo._commit()
+        output.close()
 
-
-def parse_orders(orders):
-    mylist = list()
-    with open(orders) as ordersFile:
-        ordersFile.readline()
-        i = 0
-        for line in ordersFile:
-            arg0 = line.split(',')[0]
-            arg1 = line.split(',')[1]
-            arg1 = arg1[0:len(arg1)-1]
-            order = Order(i ,arg0 , arg1)
-            i = i + 1
-            repo.orders.insert(order)
-            mylist.append(arg1)
-
-        for topping in mylist:
-            min = repo.hats.min(topping)[0]
-            repo.hats.update(min,topping)
-            repo.hats.deleteZero()
 
 if __name__ == '__main__':
     main(sys.argv)
